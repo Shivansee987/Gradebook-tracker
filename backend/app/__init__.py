@@ -9,6 +9,7 @@ from app.models.subject import Subject
 from app.models.marks import Marks
 from app.models.grading_version import GradingVersion
 from app.models.grade import Grade
+from app.models.audit_log import AuditLog
 
 
 def create_app():
