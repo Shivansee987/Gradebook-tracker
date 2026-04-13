@@ -1,6 +1,7 @@
 from flask import Flask
 from .config import Config
 from .extensions import db, bcrypt, jwt
+from app.routes.auth_routes import auth_bp # Import the authentication blueprint
 
 def create_app():
     """
@@ -13,6 +14,8 @@ def create_app():
 
     bcrypt.init_app(app) # Initialize the bcrypt extension with the app
     jwt.init_app(app) # Initialize the JWT extension with the app
+
+    app.register_blueprint(auth_bp) # Register the authentication blueprint
 
     return app
 
