@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.subject import Subject
 from app.models.marks import Marks
 from app.models.grading_version import GradingVersion
+from app.models.grade import Grade
 
 
 def create_app():
