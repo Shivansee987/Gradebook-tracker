@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from .config import Config
 from .extensions import db, bcrypt, jwt
 from app.routes.auth_routes import auth_bp # Import the authentication blueprint
@@ -29,5 +29,30 @@ def create_app():
     app.register_blueprint(grading_bp) # Register the grading blueprint
     app.register_blueprint(marks_bp) # Register the marks blueprint
     app.register_blueprint(report_bp) # Register the report blueprint
+
+    @app.errorhandler(404)
+    def not_found(_error):
+        return jsonify({'error': 'Resource not found.'}), 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(_error):
+        return jsonify({'error': 'Method not allowed.'}), 405
+
+    @app.errorhandler(500)
+    def internal_error(_error):
+        return jsonify({'error': 'Internal server error.'}), 500
+
+    @jwt.unauthorized_loader
+    def unauthorized_response(message):
+        return jsonify({'error': message}), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_response(message):
+        return jsonify({'error': message}), 422
+
+    @jwt.expired_token_loader
+    def expired_token_response(_jwt_header, _jwt_payload):
+        return jsonify({'error': 'Token has expired.'}), 401
+
     return app
 

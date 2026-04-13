@@ -1,61 +1,54 @@
-from functools import wraps # This import is necessary for creating decorators in Python
+from functools import wraps
 
-from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request # These imports are necessary for working with JWTs in Flask
-
-def role_required(required_role):
-    """
-    This function is a decorator that can be used to protect routes in a Flask application by requiring a specific user role for access. It verifies that a valid JWT is present in the request, retrieves the user's identity from the JWT, checks if the user's role matches the required role, and either allows access to the route or returns an appropriate error response if the user is unauthorized or has insufficient permissions.
-    """
-
-    def wrapper(fn):
-        """
-        This inner function is the actual decorator that wraps the original function (route handler) and performs the role-based access control logic. It uses the @wraps decorator to preserve the original function's metadata and defines a new function (decorator) that will be executed when the decorated route is accessed.
-        """
-        @wraps(fn)
-        
-        def decorator(*args, **kwargs):
-            """ 
-            This function is the decorator that will be executed when the decorated route is accessed. It verifies the JWT, retrieves the user's identity and role, checks if the user has the required role, and either allows access to the route or returns an error response. 
-
-            args: The positional arguments passed to the decorated function (route handler).
-            kwargs: The keyword arguments passed to the decorated function (route handler).
-
-            Returns:
-            The result of the decorated function if the user has the required role, or an error response if the user is unauthorized or has insufficient permissions.
-            """
-            verify_jwt_in_request() # Verify that a valid JWT is present in the request
-
-            user_identity = get_jwt_identity() # Get the identity of the currently authenticated user from the JWT
-            claims = get_jwt() # Get all JWT claims (including additional_claims)
-
-            if not user_identity:
-                return {'error': 'Unauthorized access. No user identity found.'}, 401
-
-            # Support both identity formats:
-            # 1) dict identity: {'id': '...', 'role': '...'}
-            # 2) string identity with role in additional_claims
-            user_role = claims.get('role')
-            if not user_role and isinstance(user_identity, dict):
-                user_role = user_identity.get('role')
-
-            if user_role != required_role:
-                return {'error': 'Forbidden access. Insufficient permissions.'}, 403
-            
-            return fn(*args, **kwargs) # If the user has the required role, proceed to execute the decorated function
-        return decorator
-    return wrapper
+from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 
 def get_current_user_id():
-    """
-    This function retrieves the unique identifier of the currently authenticated user from the JWT. It verifies that a valid JWT is present in the request, extracts the user's identity from the JWT, and returns the user ID if it is found. If no valid JWT is present or if the user ID cannot be extracted, it returns None.
-    """
-    try:
-        verify_jwt_in_request() # Verify that a valid JWT is present in the request
-        user_identity = get_jwt_identity() # Get the identity of the currently authenticated user from the JWT
+    """Return the authenticated user id from JWT identity."""
+    verify_jwt_in_request()
+    user_identity = get_jwt_identity()
 
-        if isinstance(user_identity, dict):
-            return user_identity.get('id') # Return the user ID if the identity is a dictionary
-        return None # Return None if the identity is not in the expected format
-    except Exception:
-        return None # Return None if there was an error verifying the JWT or extracting the identity
+    # Support both identity payload styles used by JWT.
+    if isinstance(user_identity, dict):
+        return user_identity.get("id") or user_identity.get("unique_id")
+    return str(user_identity) if user_identity else None
+
+
+def get_current_user_role():
+    """Return the authenticated user's role from claims or identity."""
+    verify_jwt_in_request()
+    claims = get_jwt()
+    user_identity = get_jwt_identity()
+
+    role = claims.get("role")
+    if role:
+        return role
+
+    if isinstance(user_identity, dict):
+        return user_identity.get("role")
+    return None
+
+
+def role_required(required_roles):
+    """Protect routes using one role or a list of roles."""
+    if isinstance(required_roles, str):
+        allowed_roles = {required_roles}
+    else:
+        allowed_roles = set(required_roles)
+
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            user_id = get_current_user_id()
+            if not user_id:
+                return {"error": "Unauthorized access. No user identity found."}, 401
+
+            user_role = get_current_user_role()
+            if user_role not in allowed_roles:
+                return {"error": "Forbidden access. Insufficient permissions."}, 403
+
+            return fn(*args, **kwargs)
+
+        return decorator
+
+    return wrapper

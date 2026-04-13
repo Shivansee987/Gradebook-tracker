@@ -3,6 +3,19 @@ from app.models.grade import Grade
 from app.models.marks import Marks
 from app.services.grading_version import get_active_version
 
+
+def _score_to_letter(score):
+    """Convert numeric score to a grade letter."""
+    if score >= 90:
+        return 'A'
+    if score >= 80:
+        return 'B'
+    if score >= 70:
+        return 'C'
+    if score >= 60:
+        return 'D'
+    return 'F'
+
 def calculate_and_store_grade(marks_id):
 
     """
@@ -26,23 +39,24 @@ def calculate_and_store_grade(marks_id):
         return version
     
     # calculate grade based on the active grading version
-    grade_value = (
+    grade_score = (
         marks.exam_marks * version.exam_weight + 
         marks.assignment_marks * version.assignment_weight
     )
+    grade_value = _score_to_letter(grade_score)
 
     # store the grade
     grade = Grade(
         student_id=marks.student_id,
         subject_id=marks.subject_id,
         marks_id=marks.id,
-        letter_grade=grade_value,
-        grading_version_id=version.id
+        grade=grade_value,
+        version_id=version.id
     )
 
     # Save the new grade to the database
     db.session.add(grade)
-    db.session.commit()
+    db.session.flush()
 
     return {
         "message": "Grade calculated and stored successfully.",

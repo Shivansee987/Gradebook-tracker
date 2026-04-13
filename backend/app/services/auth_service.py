@@ -11,14 +11,25 @@ def create_user(data):
     This function creates a new user in the database. It takes a dictionary of user data as input, validates the required fields and role, checks for existing users with the same username or email, hashes the password using bcrypt, and then creates and saves the new user to the database. If any validation fails, it returns an appropriate error message and status code.
     """
 
+    if not isinstance(data, dict):
+        return {'error': 'Invalid JSON payload.'}, 400
+
     username = data.get('username')
-    email = data.get('email')   
+    email = data.get('email')
     password = data.get('password')
-    role = data.get('role', 'none')
+    role = data.get('role', 'student')
+
+    if isinstance(username, str):
+        username = username.strip()
+    if isinstance(email, str):
+        email = email.strip().lower()
 
     # BASIC VALIDATION, CHECK FOR MISSING FIELDS AND VALID ROLE
     if not all([username, email, password]):
         return {'error': 'Username, email, and password are required.'}, 400
+
+    if len(password) < 8:
+        return {'error': 'Password must be at least 8 characters long.'}, 400
     
     # Check if the role is valid
     if role not in VALID_ROLES:
@@ -38,16 +49,26 @@ def create_user(data):
     new_user = User(username=username, email=email, password=hashed_password, role=role)
 
     # Add the new user to the database
-    db.session.add(new_user)
-    db.session.commit()
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return {'error': 'Failed to create user.'}, 500
 
     return {'message': 'User created successfully.'}, 201
 
 
 def login_user(data):
 
+    if not isinstance(data, dict):
+        return {'error': 'Invalid JSON payload.'}, 400
+
     email = data.get('email')
     password = data.get('password')
+
+    if isinstance(email, str):
+        email = email.strip().lower()
 
     # basic validation, check for missing fields
     if not all([email, password]):

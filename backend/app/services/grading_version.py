@@ -5,6 +5,8 @@ This file defines the grading version service for the Flask application. It cont
 from app.extensions import db
 from app.models.grading_version import GradingVersion
 
+EPSILON = 1e-6
+
 def create_grading_version(data):
     """
     This function creates a new grading version based on the provided data. It validates the input weights for exams and assignments, ensures that they sum to 1.0, deactivates any existing active grading version, and then creates and saves the new grading version to the database. The function returns the newly created grading version instance.
@@ -15,33 +17,43 @@ def create_grading_version(data):
     returns:
         GradingVersion: The newly created grading version instance if successful, or an error message with a 400 status code if validation fails.
     """
-    exam_weight = data.get('exam_weight')
+    if not isinstance(data, dict):
+        return {'error': 'Invalid JSON payload.'}, 400
 
+    exam_weight = data.get('exam_weight')
     assignment_weight = data.get('assignment_weight')
 
     # basic validation
     if exam_weight is None or assignment_weight is None:
         return {'error': 'Both exam_weight and assignment_weight are required.'}, 400
     
-    if exam_weight + assignment_weight != 1.0:
-        return {'error': 'Weight must sum to 1.0.'}, 400
-    
-    # Deactivate existing active grading versions
-    old_active = GradingVersion.query.filter_by(is_active=True).first()
-    if old_active:
-        old_active.is_active = False
-        db.session.commit()
-    
-    # Create new grading version
-    new_version = GradingVersion(
-        exam_weight=exam_weight,
-        assignment_weight=assignment_weight,
-        is_active=True
-    )
+    try:
+        exam_weight = float(exam_weight)
+        assignment_weight = float(assignment_weight)
+    except (TypeError, ValueError):
+        return {'error': 'Weights must be numeric values.'}, 400
 
-    # Save the new grading version to the database
-    db.session.add(new_version)
-    db.session.commit()
+    if exam_weight < 0 or assignment_weight < 0:
+        return {'error': 'Weights must be non-negative.'}, 400
+
+    if abs((exam_weight + assignment_weight) - 1.0) > EPSILON:
+        return {'error': 'Weight must sum to 1.0.'}, 400
+
+    try:
+        # Deactivate all active versions before creating the new active one.
+        GradingVersion.query.filter_by(is_active=True).update({'is_active': False})
+
+        new_version = GradingVersion(
+            exam_weight=exam_weight,
+            assignment_weight=assignment_weight,
+            is_active=True
+        )
+        db.session.add(new_version)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return {'error': 'Failed to create grading version.'}, 500
+
     return new_version
 
 
