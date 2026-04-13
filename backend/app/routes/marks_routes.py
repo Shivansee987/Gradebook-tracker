@@ -5,7 +5,7 @@ from app.utils.auth_utils import role_required
 marks_bp = Blueprint('marks', __name__)
 
 @marks_bp.route('/add-marks', methods=['POST'])
-#@role_required(['admin', 'teacher']) # Only allow users with 'admin' or 'teacher' roles to access this route
+@role_required(['admin', 'teacher']) # Only allow users with 'admin' or 'teacher' roles to access this route
 
 def add_marks():
     """

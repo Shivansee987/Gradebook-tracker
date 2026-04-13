@@ -1,6 +1,8 @@
 from app.extensions import db
 from app.models.marks import Marks
 from app.services.grade_service import calculate_and_store_grade
+from app.services.auth_service import get_current_user_id
+from app.services.audit_service import log_action
 
 def create_marks(data):
 
@@ -29,6 +31,19 @@ def create_marks(data):
     # Save the new marks entry to the database
     db.session.add(marks)
     db.session.commit()
+
+    # audit logs
+    user_id = get_current_user_id() # get the current user's unique identifier for audit logging
+
+    # Log the creation of the new marks entry in the audit log
+    log_action(
+        action_type="create",
+        table_name="marks",
+        record_id=marks.id,
+        old_value=None,
+        new_value=marks.to_dict(),
+        changed_by=user_id
+    )
 
     grade_response, grade_status = calculate_and_store_grade(marks.id) # calculate and store the grade based on the newly created marks entry
 

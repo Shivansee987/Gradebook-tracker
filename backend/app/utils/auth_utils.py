@@ -44,3 +44,18 @@ def role_required(required_role):
             return fn(*args, **kwargs) # If the user has the required role, proceed to execute the decorated function
         return decorator
     return wrapper
+
+
+def get_current_user_id():
+    """
+    This function retrieves the unique identifier of the currently authenticated user from the JWT. It verifies that a valid JWT is present in the request, extracts the user's identity from the JWT, and returns the user ID if it is found. If no valid JWT is present or if the user ID cannot be extracted, it returns None.
+    """
+    try:
+        verify_jwt_in_request() # Verify that a valid JWT is present in the request
+        user_identity = get_jwt_identity() # Get the identity of the currently authenticated user from the JWT
+
+        if isinstance(user_identity, dict):
+            return user_identity.get('id') # Return the user ID if the identity is a dictionary
+        return None # Return None if the identity is not in the expected format
+    except Exception:
+        return None # Return None if there was an error verifying the JWT or extracting the identity
