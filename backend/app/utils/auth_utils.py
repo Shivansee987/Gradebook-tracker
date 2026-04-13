@@ -1,6 +1,6 @@
 from functools import wraps # This import is necessary for creating decorators in Python
 
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request # These imports are necessary for working with JWTs in Flask
+from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request # These imports are necessary for working with JWTs in Flask
 
 def role_required(required_role):
     """
@@ -26,11 +26,17 @@ def role_required(required_role):
             verify_jwt_in_request() # Verify that a valid JWT is present in the request
 
             user_identity = get_jwt_identity() # Get the identity of the currently authenticated user from the JWT
+            claims = get_jwt() # Get all JWT claims (including additional_claims)
 
             if not user_identity:
                 return {'error': 'Unauthorized access. No user identity found.'}, 401
-            
-            user_role = user_identity.get('role') # Get the user's role from the identity information
+
+            # Support both identity formats:
+            # 1) dict identity: {'id': '...', 'role': '...'}
+            # 2) string identity with role in additional_claims
+            user_role = claims.get('role')
+            if not user_role and isinstance(user_identity, dict):
+                user_role = user_identity.get('role')
 
             if user_role != required_role:
                 return {'error': 'Forbidden access. Insufficient permissions.'}, 403

@@ -3,6 +3,7 @@ from .config import Config
 from .extensions import db, bcrypt, jwt
 from app.routes.auth_routes import auth_bp # Import the authentication blueprint
 from app.routes.grading_routes import grading_bp # Import the grading blueprint
+from app.routes.marks_routes import marks_bp # Import the marks blueprint
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.marks import Marks
@@ -24,5 +25,6 @@ def create_app():
 
     app.register_blueprint(auth_bp) # Register the authentication blueprint
     app.register_blueprint(grading_bp) # Register the grading blueprint
+    app.register_blueprint(marks_bp) # Register the marks blueprint
     return app
 

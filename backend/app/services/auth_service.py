@@ -65,10 +65,8 @@ def login_user(data):
     
     # create a JWT access token for the authenticated user
     access_token = create_access_token(
-        identity = {
-            "unique_id": user.unique_id,
-            "role": user.role
-        }
+    identity=str(user.unique_id),
+    additional_claims={"role": user.role}
     )
 
     # return the access token and user data (excluding the password hash) in the response with a success message
