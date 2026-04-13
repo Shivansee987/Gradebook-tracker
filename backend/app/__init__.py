@@ -2,6 +2,9 @@ from flask import Flask
 from .config import Config
 from .extensions import db, bcrypt, jwt
 from app.routes.auth_routes import auth_bp # Import the authentication blueprint
+from app.models.user import User
+from app.models.subject import Subject
+from app.models.marks import Marks
 
 def create_app():
     """
