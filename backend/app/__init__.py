@@ -5,6 +5,7 @@ from app.routes.auth_routes import auth_bp # Import the authentication blueprint
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.marks import Marks
+from app.models.grading_version import GradingVersion
 
 def create_app():
     """
