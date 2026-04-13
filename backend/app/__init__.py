@@ -2,10 +2,12 @@ from flask import Flask
 from .config import Config
 from .extensions import db, bcrypt, jwt
 from app.routes.auth_routes import auth_bp # Import the authentication blueprint
+from app.routes.grading_routes import grading_bp # Import the grading blueprint
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.marks import Marks
 from app.models.grading_version import GradingVersion
+
 
 def create_app():
     """
@@ -20,6 +22,6 @@ def create_app():
     jwt.init_app(app) # Initialize the JWT extension with the app
 
     app.register_blueprint(auth_bp) # Register the authentication blueprint
-
+    app.register_blueprint(grading_bp) # Register the grading blueprint
     return app
 

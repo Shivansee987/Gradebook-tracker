@@ -1,3 +1,8 @@
+"""
+This file defines the authentication routes for the Flask application. It creates a blueprint for authentication-related endpoints and defines two routes: one for user registration (/register) and another for user login (/login). Each route handles POST requests, processes the incoming data, and calls the appropriate service functions to perform the necessary operations (creating a user or logging in a user). The results are returned as JSON responses with the corresponding HTTP status codes.
+"""
+
+
 from flask import Blueprint, request, jsonify # this import is necessary for creating a blueprint and handling requests and responses
 
 from app.services.auth_service import create_user, login_user # this import is necessary for using the create_user and login_user functions from the auth_service module
