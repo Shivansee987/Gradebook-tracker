@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify # this import is necessary for creating a blueprint and handling requests and responses
 
-from app.services.auth_service import create_user # this import is necessary for using the create_user function from the auth_service module
+from app.services.auth_service import create_user, login_user # this import is necessary for using the create_user and login_user functions from the auth_service module
 
 auth_bp = Blueprint('auth', __name__) # Create a blueprint for authentication routes
 
@@ -12,5 +12,17 @@ def signup():
     data = request.get_json() # Get the JSON data from the request
 
     result, status_code = create_user(data) # Call the create_user function with the received data and get the result and status code
-    
+
+    return jsonify(result), status_code # Return the result as a JSON response with the appropriate status code
+
+
+@auth_bp.route('/login', methods=['POST']) # Define a route for user login that accepts POST requests
+def signin():
+    """
+    This function handles the user login process. It receives user credentials from the request, calls the login_user function to authenticate the user, and returns the appropriate response based on the outcome of the login process.
+    """
+    data = request.get_json() # Get the JSON data from the request
+
+    result, status_code = login_user(data) # Call the login_user function with the received data and get the result and status code
+
     return jsonify(result), status_code # Return the result as a JSON response with the appropriate status code

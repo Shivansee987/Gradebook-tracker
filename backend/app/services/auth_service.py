@@ -1,5 +1,8 @@
-from app.models.user import User
-from app.extensions import db, bcrypt
+from app.models.user import User # this import is necessary to access the User model for creating new users in the database
+
+from app.extensions import db, bcrypt # this import is necessary to use the database and bcrypt extensions for hashing passwords and saving users to the database
+
+from flask_jwt_extended import create_access_token # this import is necessary for creating JWT access tokens for user authentication
 
 VALID_ROLES = ['admin', 'teacher', 'student']
 
@@ -39,3 +42,38 @@ def create_user(data):
     db.session.commit()
 
     return {'message': 'User created successfully.'}, 201
+
+
+def login_user(data):
+
+    email = data.get('email')
+    password = data.get('password')
+
+    # basic validation, check for missing fields
+    if not all([email, password]):
+        return {'error': 'Email and password are required.'}, 400
+    
+    # check if the user exists in the database
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return {'error': 'Invalid email or password.'}, 401
+    
+    # check if the provided password matches the stored hashed password
+    if not bcrypt.check_password_hash(user.password, password):
+        return {'error': 'Invalid email or password.'}, 401
+    
+    # create a JWT access token for the authenticated user
+    access_token = create_access_token(
+        identity = {
+            "unique_id": user.unique_id,
+            "role": user.role
+        }
+    )
+
+    # return the access token and user data (excluding the password hash) in the response with a success message
+    return {
+        'message': 'Login successful.',
+        'access_token': access_token,
+        'user': user.to_dict() # Return user data as a dictionary, excluding the password hash
+    }, 200
