@@ -1,10 +1,19 @@
 export async function apiRequest(url, options = {}) {
+  const { authToken, headers: customHeaders, ...restOptions } = options;
+
+  const normalizedHeaders = {
+    "Content-Type": "application/json",
+    ...(customHeaders || {}),
+  };
+
+  // Attach JWT only when caller asks for authenticated requests.
+  if (authToken) {
+    normalizedHeaders.Authorization = `Bearer ${authToken}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
+    headers: normalizedHeaders,
+    ...restOptions,
   });
 
   const data = await response.json().catch(() => ({}));

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SignupForm } from "../../../components/Signup/SignupForm";
 import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../../../shared/toast/useToast";
 
 export function SignupPage() {
   const { signup } = useAuth();
+  const { pushToast } = useToast();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -20,11 +22,23 @@ export function SignupPage() {
       setSuccess(
         result.message || "Account created successfully. You can now log in.",
       );
+
+      pushToast({
+        type: "success",
+        title: "Account created",
+        message: result.message || "You can now sign in with your credentials.",
+      });
+
       setTimeout(() => {
         navigate("/login");
       }, 900);
     } catch (err) {
       setError(err.message);
+      pushToast({
+        type: "error",
+        title: "Signup failed",
+        message: err.message,
+      });
     } finally {
       setLoading(false);
     }

@@ -183,6 +183,150 @@ h1 {
   gap: 0.9rem;
 }
 
+.dashboard-card-wide {
+  width: min(1080px, 100%);
+}
+
+.dashboard-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-actions .btn-secondary {
+  margin-top: 0;
+}
+
+.dashboard-section {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-section h2 {
+  font-family: "Sora", sans-serif;
+  font-size: 1.15rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.dashboard-tile {
+  background: #f8f2e3;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.dashboard-tile h3 {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-tile p {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  text-align: left;
+  padding: 0.68rem 0.78rem;
+  border-bottom: 1px solid #eee3cf;
+  font-size: 0.9rem;
+}
+
+.dashboard-table th {
+  background: #f8f2e3;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-pagination-note {
+  margin-top: 0.15rem;
+}
+
+.toast-viewport {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: grid;
+  gap: 0.55rem;
+  width: min(340px, calc(100vw - 2rem));
+}
+
+.toast {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  background: #fff;
+  padding: 0.72rem 0.78rem;
+}
+
+.toast h4 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.toast p {
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.toast-success {
+  border-color: rgba(5, 122, 85, 0.35);
+  background: #f3fff8;
+}
+
+.toast-error {
+  border-color: rgba(180, 35, 24, 0.35);
+  background: #fff4f2;
+}
+
+.toast-info {
+  border-color: rgba(15, 118, 110, 0.35);
+  background: #f2fdfc;
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .dashboard-meta {
   display: grid;
   gap: 0.4rem;
@@ -200,5 +344,9 @@ h1 {
   .auth-page,
   .dashboard-page {
     padding: 1rem;
+  }
+
+  .dashboard-header-row {
+    flex-direction: column;
   }
 }

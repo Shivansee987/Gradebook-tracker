@@ -2,9 +2,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { LoginForm } from "../../../components/Login/LoginForm";
 import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../../../shared/toast/useToast";
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { pushToast } = useToast();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,9 +17,19 @@ export function LoginPage() {
 
     try {
       await login(values);
+      pushToast({
+        type: "success",
+        title: "Welcome back",
+        message: "Login successful.",
+      });
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
+      pushToast({
+        type: "error",
+        title: "Login failed",
+        message: err.message,
+      });
     } finally {
       setLoading(false);
     }
