@@ -1,6 +1,11 @@
 from flask import Blueprint, jsonify, request
 
-from app.services.subject_service import create_subject, get_subjects
+from app.services.subject_service import (
+    create_subject,
+    delete_subject,
+    get_subjects,
+    update_subject,
+)
 from app.utils.auth_utils import role_required
 
 
@@ -24,4 +29,21 @@ def list_subjects():
 def add_subject():
     data = request.get_json()
     result, status_code = create_subject(data)
+    return jsonify(result), status_code
+
+
+@subject_bp.route("/subjects/<subject_id>", methods=["PUT"])
+@subject_bp.route("/api/subjects/<subject_id>", methods=["PUT"])
+@role_required(["admin", "teacher"])
+def edit_subject(subject_id):
+    data = request.get_json()
+    result, status_code = update_subject(subject_id, data)
+    return jsonify(result), status_code
+
+
+@subject_bp.route("/subjects/<subject_id>", methods=["DELETE"])
+@subject_bp.route("/api/subjects/<subject_id>", methods=["DELETE"])
+@role_required(["admin", "teacher"])
+def remove_subject(subject_id):
+    result, status_code = delete_subject(subject_id)
     return jsonify(result), status_code

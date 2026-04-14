@@ -5,11 +5,13 @@ import {
   createSubject,
   createGradingVersion,
   createMarks,
+  deleteSubject,
   getActiveGradingVersion,
   getAllMarksReport,
   getRegisteredStudents,
   getSubjects,
   getStudentReport,
+  updateSubject,
 } from "../../pages/services/dashboardService";
 
 function summarize(rows) {
@@ -66,6 +68,13 @@ export function TeacherDashboard() {
     subject_name: "",
   });
   const [creatingSubject, setCreatingSubject] = useState(false);
+  const [editingSubjectId, setEditingSubjectId] = useState("");
+  const [editingSubjectForm, setEditingSubjectForm] = useState({
+    subject_code: "",
+    subject_name: "",
+  });
+  const [savingSubjectId, setSavingSubjectId] = useState("");
+  const [deletingSubjectId, setDeletingSubjectId] = useState("");
 
   const [studentQueryId, setStudentQueryId] = useState("");
   const [studentRows, setStudentRows] = useState([]);
@@ -308,6 +317,86 @@ export function TeacherDashboard() {
       });
     } finally {
       setCreatingSubject(false);
+    }
+  };
+
+  const startEditSubject = (subject) => {
+    setEditingSubjectId(subject.id);
+    setEditingSubjectForm({
+      subject_code: subject.subject_code || "",
+      subject_name: subject.subject_name || "",
+    });
+  };
+
+  const cancelEditSubject = () => {
+    setEditingSubjectId("");
+    setEditingSubjectForm({ subject_code: "", subject_name: "" });
+  };
+
+  const handleSaveSubject = async (subjectId) => {
+    const subjectCode = editingSubjectForm.subject_code.trim().toUpperCase();
+    const subjectName = editingSubjectForm.subject_name.trim();
+
+    if (!subjectCode || !subjectName) {
+      pushToast({
+        type: "error",
+        title: "Missing fields",
+        message: "Subject code and name are required.",
+      });
+      return;
+    }
+
+    setSavingSubjectId(subjectId);
+    try {
+      await updateSubject({
+        token,
+        subjectId,
+        payload: {
+          subject_code: subjectCode,
+          subject_name: subjectName,
+        },
+      });
+
+      pushToast({
+        type: "success",
+        title: "Subject updated",
+        message: "Subject details were updated successfully.",
+      });
+
+      cancelEditSubject();
+      await fetchTeacherData({ manual: false });
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Failed to update subject",
+        message: error.message || "Could not update subject.",
+      });
+    } finally {
+      setSavingSubjectId("");
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId) => {
+    setDeletingSubjectId(subjectId);
+    try {
+      await deleteSubject({ token, subjectId });
+
+      pushToast({
+        type: "success",
+        title: "Subject deleted",
+        message: "Subject removed successfully.",
+      });
+
+      // Refresh keeps table + marks form dropdown in sync after deletion.
+      await fetchTeacherData({ manual: false });
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Failed to delete subject",
+        message: error.message || "Could not delete subject.",
+      });
+    } finally {
+      setDeletingSubjectId("");
     }
   };
 
@@ -614,14 +703,89 @@ export function TeacherDashboard() {
                       <th>Subject ID</th>
                       <th>Code</th>
                       <th>Name</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {subjects.map((subject) => (
                       <tr key={subject.id}>
                         <td>{subject.id}</td>
-                        <td>{subject.subject_code}</td>
-                        <td>{subject.subject_name}</td>
+                        <td>
+                          {editingSubjectId === subject.id ? (
+                            <input
+                              type="text"
+                              maxLength={10}
+                              value={editingSubjectForm.subject_code}
+                              onChange={(event) =>
+                                setEditingSubjectForm((prev) => ({
+                                  ...prev,
+                                  subject_code: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            subject.subject_code
+                          )}
+                        </td>
+                        <td>
+                          {editingSubjectId === subject.id ? (
+                            <input
+                              type="text"
+                              value={editingSubjectForm.subject_name}
+                              onChange={(event) =>
+                                setEditingSubjectForm((prev) => ({
+                                  ...prev,
+                                  subject_name: event.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            subject.subject_name
+                          )}
+                        </td>
+                        <td>
+                          {editingSubjectId === subject.id ? (
+                            <div className="dashboard-actions">
+                              <button
+                                className="btn-secondary"
+                                type="button"
+                                onClick={() => handleSaveSubject(subject.id)}
+                                disabled={savingSubjectId === subject.id}
+                              >
+                                {savingSubjectId === subject.id
+                                  ? "Saving..."
+                                  : "Save"}
+                              </button>
+                              <button
+                                className="btn-secondary"
+                                type="button"
+                                onClick={cancelEditSubject}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="dashboard-actions">
+                              <button
+                                className="btn-secondary"
+                                type="button"
+                                onClick={() => startEditSubject(subject)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="btn-secondary"
+                                type="button"
+                                onClick={() => handleDeleteSubject(subject.id)}
+                                disabled={deletingSubjectId === subject.id}
+                              >
+                                {deletingSubjectId === subject.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

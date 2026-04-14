@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import {
   getActiveGradingVersion,
+  getAuditLogs,
   getAllMarksReport,
   getStudentReport,
 } from "./services/dashboardService";
@@ -49,6 +50,8 @@ export function DashboardPage() {
   const [studentRows, setStudentRows] = useState([]);
   const [teacherRows, setTeacherRows] = useState([]);
   const [teacherPagination, setTeacherPagination] = useState(null);
+  const [auditRows, setAuditRows] = useState([]);
+  const [auditPagination, setAuditPagination] = useState(null);
 
   const isElevatedRole = user?.role === "admin";
 
@@ -80,14 +83,19 @@ export function DashboardPage() {
         const versionPromise = getActiveGradingVersion({ token });
 
         if (isElevatedRole) {
-          const [versionData, allMarksData] = await Promise.all([
+          // Admin dashboard merges operational data and recent audit trail
+          // so supervisors can verify *what changed* and *who changed it*.
+          const [versionData, allMarksData, auditData] = await Promise.all([
             versionPromise,
             getAllMarksReport({ token, page: 1, perPage: 100 }),
+            getAuditLogs({ token, page: 1, perPage: 25 }),
           ]);
 
           setActiveVersion(versionData);
           setTeacherRows(allMarksData.items || []);
           setTeacherPagination(allMarksData.pagination || null);
+          setAuditRows(auditData.items || []);
+          setAuditPagination(auditData.pagination || null);
           setStudentRows([]);
         } else {
           const [versionData, studentReportData] = await Promise.all([
@@ -101,6 +109,8 @@ export function DashboardPage() {
           );
           setTeacherRows([]);
           setTeacherPagination(null);
+          setAuditRows([]);
+          setAuditPagination(null);
         }
 
         if (isManualRefresh) {
@@ -264,6 +274,58 @@ export function DashboardPage() {
                 </p>
               )}
             </section>
+
+            {isElevatedRole && (
+              <section className="dashboard-section">
+                <h2>Audit Activity</h2>
+                <p className="muted-text">
+                  This timeline shows backend write operations such as subject
+                  create/update/delete, grading version changes, and marks
+                  inserts.
+                </p>
+
+                {auditRows.length === 0 ? (
+                  <p className="muted-text">No audit entries yet.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="dashboard-table">
+                      <thead>
+                        <tr>
+                          <th>When</th>
+                          <th>Action</th>
+                          <th>Table</th>
+                          <th>Record ID</th>
+                          <th>Changed By</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {auditRows.map((row) => (
+                          <tr key={row.id}>
+                            <td>
+                              {row.timestamp
+                                ? new Date(row.timestamp).toLocaleString()
+                                : "N/A"}
+                            </td>
+                            <td>{row.action_type}</td>
+                            <td>{row.table_name}</td>
+                            <td>{row.record_id}</td>
+                            <td>{row.changed_by}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {auditPagination && (
+                  <p className="muted-text dashboard-pagination-note">
+                    Showing page {auditPagination.page} of{" "}
+                    {auditPagination.pages} | total audit rows:{" "}
+                    {auditPagination.total}
+                  </p>
+                )}
+              </section>
+            )}
           </>
         )}
       </section>

@@ -81,3 +81,46 @@ export function createSubject({ token, payload }) {
     body: JSON.stringify(payload),
   });
 }
+
+// Teachers/admin can update subject metadata (code/name).
+export function updateSubject({ token, subjectId, payload }) {
+  return apiRequest(`/api/subjects/${subjectId}`, {
+    method: "PUT",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+// Teachers/admin can delete a subject when it is not referenced by marks.
+export function deleteSubject({ token, subjectId }) {
+  return apiRequest(`/api/subjects/${subjectId}`, {
+    method: "DELETE",
+    authToken: token,
+  });
+}
+
+// Admin-only endpoint to inspect the audit history.
+export function getAuditLogs({
+  token,
+  page = 1,
+  perPage = 25,
+  tableName,
+  actionType,
+}) {
+  const query = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+
+  if (tableName) {
+    query.set("table_name", tableName);
+  }
+  if (actionType) {
+    query.set("action_type", actionType);
+  }
+
+  return apiRequest(`/api/audit/logs?${query.toString()}`, {
+    method: "GET",
+    authToken: token,
+  });
+}

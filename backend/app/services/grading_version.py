@@ -4,6 +4,8 @@ This file defines the grading version service for the Flask application. It cont
 
 from app.extensions import db
 from app.models.grading_version import GradingVersion
+from app.services.audit_service import log_action
+from app.utils.auth_utils import get_current_user_id
 
 EPSILON = 1e-6
 
@@ -40,6 +42,8 @@ def create_grading_version(data):
         return {'error': 'Weight must sum to 1.0.'}, 400
 
     try:
+        previous_active = GradingVersion.query.filter_by(is_active=True).first()
+
         # Deactivate all active versions before creating the new active one.
         GradingVersion.query.filter_by(is_active=True).update({'is_active': False})
 
@@ -49,6 +53,22 @@ def create_grading_version(data):
             is_active=True
         )
         db.session.add(new_version)
+
+        # Flush before audit so IDs/defaults are available for serialized snapshots.
+        db.session.flush()
+
+        user_id = get_current_user_id()
+        if user_id:
+            log_action(
+                action_type='create',
+                table_name='grading_versions',
+                record_id=new_version.id,
+                old_value=previous_active.to_dict() if previous_active else None,
+                new_value=new_version.to_dict(),
+                changed_by=user_id,
+                commit=False
+            )
+
         db.session.commit()
     except Exception:
         db.session.rollback()
