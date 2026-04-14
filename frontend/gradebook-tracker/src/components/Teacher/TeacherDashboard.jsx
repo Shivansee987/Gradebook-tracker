@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useToast } from "../../shared/toast/useToast";
 import {
+  createSubject,
   createGradingVersion,
   createMarks,
   getActiveGradingVersion,
   getAllMarksReport,
   getRegisteredStudents,
+  getSubjects,
   getStudentReport,
 } from "../../pages/services/dashboardService";
 
@@ -42,6 +44,8 @@ export function TeacherDashboard() {
   const [pagination, setPagination] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsPagination, setStudentsPagination] = useState(null);
+  const [subjects, setSubjects] = useState([]);
+  const [subjectsPagination, setSubjectsPagination] = useState(null);
 
   const [versionForm, setVersionForm] = useState({
     exam_weight: "0.6",
@@ -56,6 +60,12 @@ export function TeacherDashboard() {
     assignment_marks: "",
   });
   const [creatingMarks, setCreatingMarks] = useState(false);
+
+  const [subjectForm, setSubjectForm] = useState({
+    subject_code: "",
+    subject_name: "",
+  });
+  const [creatingSubject, setCreatingSubject] = useState(false);
 
   const [studentQueryId, setStudentQueryId] = useState("");
   const [studentRows, setStudentRows] = useState([]);
@@ -77,17 +87,21 @@ export function TeacherDashboard() {
 
       try {
         // Teacher dashboard needs both global marks and active weights, so fetch in parallel.
-        const [versionData, marksData, studentsData] = await Promise.all([
-          getActiveGradingVersion({ token }),
-          getAllMarksReport({ token, page: 1, perPage: 100 }),
-          getRegisteredStudents({ token, page: 1, perPage: 100 }),
-        ]);
+        const [versionData, marksData, studentsData, subjectsData] =
+          await Promise.all([
+            getActiveGradingVersion({ token }),
+            getAllMarksReport({ token, page: 1, perPage: 100 }),
+            getRegisteredStudents({ token, page: 1, perPage: 100 }),
+            getSubjects({ token, page: 1, perPage: 200 }),
+          ]);
 
         setActiveVersion(versionData || null);
         setAllMarks(marksData.items || []);
         setPagination(marksData.pagination || null);
         setStudents(studentsData.items || []);
         setStudentsPagination(studentsData.pagination || null);
+        setSubjects(subjectsData.items || []);
+        setSubjectsPagination(subjectsData.pagination || null);
 
         if (manual) {
           pushToast({
@@ -250,6 +264,50 @@ export function TeacherDashboard() {
       });
     } finally {
       setCreatingMarks(false);
+    }
+  };
+
+  const handleCreateSubject = async (event) => {
+    event.preventDefault();
+
+    const subjectCode = subjectForm.subject_code.trim().toUpperCase();
+    const subjectName = subjectForm.subject_name.trim();
+
+    if (!subjectCode || !subjectName) {
+      pushToast({
+        type: "error",
+        title: "Missing fields",
+        message: "subject_code and subject_name are required.",
+      });
+      return;
+    }
+
+    setCreatingSubject(true);
+    try {
+      const response = await createSubject({
+        token,
+        payload: {
+          subject_code: subjectCode,
+          subject_name: subjectName,
+        },
+      });
+
+      pushToast({
+        type: "success",
+        title: "Subject created",
+        message: response.message || "Subject added successfully.",
+      });
+
+      setSubjectForm({ subject_code: "", subject_name: "" });
+      await fetchTeacherData({ manual: false });
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Failed to create subject",
+        message: error.message || "Could not add subject.",
+      });
+    } finally {
+      setCreatingSubject(false);
     }
   };
 
@@ -418,6 +476,50 @@ export function TeacherDashboard() {
           </article>
 
           <article className="dashboard-tile teacher-form-tile">
+            <h3>Add Subject</h3>
+            <form className="auth-form" onSubmit={handleCreateSubject}>
+              <label htmlFor="ts-subject-code">Subject Code</label>
+              <input
+                id="ts-subject-code"
+                type="text"
+                maxLength={10}
+                placeholder="e.g. MATH101"
+                value={subjectForm.subject_code}
+                onChange={(event) =>
+                  setSubjectForm((prev) => ({
+                    ...prev,
+                    subject_code: event.target.value,
+                  }))
+                }
+                required
+              />
+
+              <label htmlFor="ts-subject-name">Subject Name</label>
+              <input
+                id="ts-subject-name"
+                type="text"
+                placeholder="e.g. Calculus"
+                value={subjectForm.subject_name}
+                onChange={(event) =>
+                  setSubjectForm((prev) => ({
+                    ...prev,
+                    subject_name: event.target.value,
+                  }))
+                }
+                required
+              />
+
+              <button
+                className="btn-primary"
+                type="submit"
+                disabled={creatingSubject}
+              >
+                {creatingSubject ? "Adding..." : "Add Subject"}
+              </button>
+            </form>
+          </article>
+
+          <article className="dashboard-tile teacher-form-tile">
             <h3>Add Student Marks</h3>
             <form className="auth-form" onSubmit={handleCreateMarks}>
               <label htmlFor="tm-student-id">Student ID</label>
@@ -435,9 +537,8 @@ export function TeacherDashboard() {
               />
 
               <label htmlFor="tm-subject-id">Subject ID</label>
-              <input
+              <select
                 id="tm-subject-id"
-                type="text"
                 value={marksForm.subject_id}
                 onChange={(event) =>
                   setMarksForm((prev) => ({
@@ -446,7 +547,14 @@ export function TeacherDashboard() {
                   }))
                 }
                 required
-              />
+              >
+                <option value="">Select subject</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.subject_code} - {subject.subject_name}
+                  </option>
+                ))}
+              </select>
 
               <label htmlFor="tm-exam">Exam Marks</label>
               <input
@@ -491,6 +599,43 @@ export function TeacherDashboard() {
               </button>
             </form>
           </article>
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Subjects</h2>
+          {subjects.length === 0 ? (
+            <p className="muted-text">No subjects added yet.</p>
+          ) : (
+            <>
+              <div className="table-wrap">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Subject ID</th>
+                      <th>Code</th>
+                      <th>Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subjects.map((subject) => (
+                      <tr key={subject.id}>
+                        <td>{subject.id}</td>
+                        <td>{subject.subject_code}</td>
+                        <td>{subject.subject_name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {subjectsPagination && (
+                <p className="muted-text dashboard-pagination-note">
+                  Showing page {subjectsPagination.page} of{" "}
+                  {subjectsPagination.pages} | total subjects:{" "}
+                  {subjectsPagination.total}
+                </p>
+              )}
+            </>
+          )}
         </section>
 
         <section className="dashboard-section">

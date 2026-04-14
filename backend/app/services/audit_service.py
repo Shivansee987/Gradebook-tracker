@@ -15,6 +15,7 @@ def log_action(action_type, table_name, record_id, old_value, new_value, changed
     )
 
     db.session.add(audit_log)
+    db.session.flush()
     if commit:
         db.session.commit()
 

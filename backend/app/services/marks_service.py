@@ -5,6 +5,8 @@ from app.models.user import User
 from app.services.grade_service import calculate_and_store_grade
 from app.services.audit_service import log_action
 from app.utils.auth_utils import get_current_user_id
+from flask import current_app
+from sqlalchemy.exc import IntegrityError
 
 def create_marks(data):
 
@@ -37,7 +39,7 @@ def create_marks(data):
     student = User.query.filter_by(unique_id=student_id).first()
     if not student:
         return {'error': 'Student not found.'}, 404
-    if student.role != 'student':
+    if (student.role or '').strip().lower() != 'student':
         return {'error': 'student_id must belong to a student user.'}, 400
 
     subject = Subject.query.filter_by(id=subject_id).first()
@@ -73,9 +75,14 @@ def create_marks(data):
             )
 
         db.session.commit()
-    except Exception:
+    except IntegrityError as exc:
         db.session.rollback()
-        return {'error': 'Failed to create marks.'}, 500
+        current_app.logger.exception('Integrity error while creating marks.')
+        return {'error': f'Failed to create marks due to integrity constraint: {str(exc.orig)}'}, 400
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception('Unexpected error while creating marks.')
+        return {'error': f'Failed to create marks: {str(exc)}'}, 500
 
     # Return the response with the created marks and the calculated grade (if successful)
     return {

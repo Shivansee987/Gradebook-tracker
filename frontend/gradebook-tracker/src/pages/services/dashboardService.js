@@ -59,3 +59,25 @@ export function getRegisteredStudents({ token, page = 1, perPage = 50 }) {
     authToken: token,
   });
 }
+
+// Authenticated users can list subjects.
+export function getSubjects({ token, page = 1, perPage = 100 }) {
+  const query = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+
+  return apiRequest(`/api/subjects?${query.toString()}`, {
+    method: "GET",
+    authToken: token,
+  });
+}
+
+// Teachers/admin can create new subjects.
+export function createSubject({ token, payload }) {
+  return apiRequest("/api/subjects", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}

@@ -33,5 +33,5 @@ class AuditLog(db.Model):
             'old_value': self.old_value,
             'new_value': self.new_value,
             'changed_by': self.changed_by,
-            'timestamp': self.timestamp.isoformat() # Convert datetime to ISO format string
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None # Convert datetime to ISO format string
         }
