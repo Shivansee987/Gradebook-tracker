@@ -24,3 +24,16 @@ def get_registered_students(page=1, per_page=50):
             "pages": (total + per_page - 1) // per_page,
         },
     }
+
+
+def get_student_profile(user_id):
+    """Return student profile for the authenticated student dashboard."""
+    student = User.query.filter_by(unique_id=user_id).first()
+    if not student:
+        return {"error": "Student not found."}, 404
+
+    role = (student.role or "").strip().lower()
+    if role != "student":
+        return {"error": "Only student accounts can access this resource."}, 403
+
+    return {"student": student.to_dict()}, 200

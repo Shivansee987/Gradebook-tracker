@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import {
   getActiveGradingVersion,
-  getStudentReport,
+  getCurrentStudentProfile,
+  getCurrentStudentReport,
   getSubjects,
 } from "../../pages/services/dashboardService";
 import { useToast } from "../../shared/toast/useToast";
@@ -42,6 +43,7 @@ export function StudentDashboard() {
   const [activeVersion, setActiveVersion] = useState(null);
   const [studentRows, setStudentRows] = useState([]);
   const [subjectsMap, setSubjectsMap] = useState({});
+  const [studentProfile, setStudentProfile] = useState(null);
 
   const summary = useMemo(
     () => summarizeStudentReport(studentRows),
@@ -50,7 +52,7 @@ export function StudentDashboard() {
 
   const loadStudentDashboard = useCallback(
     async ({ manual = false } = {}) => {
-      if (!token || !user?.unique_id) {
+      if (!token) {
         return;
       }
 
@@ -65,10 +67,12 @@ export function StudentDashboard() {
       try {
         // Keep student dashboard self-contained by loading version, personal report,
         // and subject catalog in parallel, then enriching rows with readable names.
-        const [versionData, reportData, subjectsData] = await Promise.all([
+        const [versionData, reportData, subjectsData, profileData] =
+          await Promise.all([
           getActiveGradingVersion({ token }),
-          getStudentReport({ token, studentId: user.unique_id }),
+          getCurrentStudentReport({ token }),
           getSubjects({ token, page: 1, perPage: 300 }),
+          getCurrentStudentProfile({ token }),
         ]);
 
         const subjects = subjectsData.items || [];
@@ -83,6 +87,7 @@ export function StudentDashboard() {
         setActiveVersion(versionData || null);
         setSubjectsMap(nextSubjectsMap);
         setStudentRows(Array.isArray(reportData) ? reportData : []);
+        setStudentProfile(profileData?.student || null);
 
         if (manual) {
           pushToast({
@@ -104,7 +109,7 @@ export function StudentDashboard() {
         setRefreshing(false);
       }
     },
-    [pushToast, token, user?.unique_id],
+    [pushToast, token],
   );
 
   useEffect(() => {
@@ -117,7 +122,7 @@ export function StudentDashboard() {
         <div className="dashboard-header-row">
           <div>
             <p className="eyebrow">Student Workspace</p>
-            <h1>Welcome, {user?.username}</h1>
+            <h1>Welcome, {studentProfile?.username || user?.username}</h1>
             <p className="muted-text">
               Track your marks, grades, and active grading policy.
             </p>
@@ -149,6 +154,10 @@ export function StudentDashboard() {
             <section className="dashboard-section">
               <h2>Overview</h2>
               <div className="dashboard-grid">
+                <article className="dashboard-tile">
+                  <h3>Student Email</h3>
+                  <p>{studentProfile?.email || "N/A"}</p>
+                </article>
                 <article className="dashboard-tile">
                   <h3>Total Subjects</h3>
                   <p>{summary.totalSubjects}</p>

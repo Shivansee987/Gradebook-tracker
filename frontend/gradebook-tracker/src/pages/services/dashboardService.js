@@ -16,6 +16,22 @@ export function getStudentReport({ token, studentId }) {
   });
 }
 
+// Student-only endpoint for current student's report.
+export function getCurrentStudentReport({ token }) {
+  return apiRequest("/api/students/me/report", {
+    method: "GET",
+    authToken: token,
+  });
+}
+
+// Student-only endpoint for current student's profile.
+export function getCurrentStudentProfile({ token }) {
+  return apiRequest("/api/students/me", {
+    method: "GET",
+    authToken: token,
+  });
+}
+
 // Teacher/admin endpoint returns paginated marks across students.
 export function getAllMarksReport({ token, page = 1, perPage = 100 }) {
   const query = new URLSearchParams({
