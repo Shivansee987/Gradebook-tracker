@@ -5,6 +5,7 @@ from app.routes.auth_routes import auth_bp # Import the authentication blueprint
 from app.routes.grading_routes import grading_bp # Import the grading blueprint
 from app.routes.marks_routes import marks_bp # Import the marks blueprint
 from app.routes.report_routes import report_bp # Import the report blueprint
+from app.routes.student_routes import student_bp # Import the student management blueprint
 from app.models.user import User
 from app.models.subject import Subject
 from app.models.marks import Marks
@@ -29,6 +30,7 @@ def create_app():
     app.register_blueprint(grading_bp) # Register the grading blueprint
     app.register_blueprint(marks_bp) # Register the marks blueprint
     app.register_blueprint(report_bp) # Register the report blueprint
+    app.register_blueprint(student_bp) # Register the student management blueprint
 
     @app.errorhandler(404)
     def not_found(_error):

@@ -6,6 +6,7 @@ import {
   createMarks,
   getActiveGradingVersion,
   getAllMarksReport,
+  getRegisteredStudents,
   getStudentReport,
 } from "../../pages/services/dashboardService";
 
@@ -39,6 +40,8 @@ export function TeacherDashboard() {
   const [activeVersion, setActiveVersion] = useState(null);
   const [allMarks, setAllMarks] = useState([]);
   const [pagination, setPagination] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [studentsPagination, setStudentsPagination] = useState(null);
 
   const [versionForm, setVersionForm] = useState({
     exam_weight: "0.6",
@@ -74,14 +77,17 @@ export function TeacherDashboard() {
 
       try {
         // Teacher dashboard needs both global marks and active weights, so fetch in parallel.
-        const [versionData, marksData] = await Promise.all([
+        const [versionData, marksData, studentsData] = await Promise.all([
           getActiveGradingVersion({ token }),
           getAllMarksReport({ token, page: 1, perPage: 100 }),
+          getRegisteredStudents({ token, page: 1, perPage: 100 }),
         ]);
 
         setActiveVersion(versionData || null);
         setAllMarks(marksData.items || []);
         setPagination(marksData.pagination || null);
+        setStudents(studentsData.items || []);
+        setStudentsPagination(studentsData.pagination || null);
 
         if (manual) {
           pushToast({
@@ -224,7 +230,8 @@ export function TeacherDashboard() {
       pushToast({
         type: "success",
         title: "Marks created",
-        message: response.message || "Marks and grade were created successfully.",
+        message:
+          response.message || "Marks and grade were created successfully.",
       });
 
       setMarksForm({
@@ -298,7 +305,9 @@ export function TeacherDashboard() {
           <div>
             <p className="eyebrow">Teacher Workspace</p>
             <h1>Welcome, {user?.username}</h1>
-            <p className="muted-text">Manage grading versions, marks, and reports.</p>
+            <p className="muted-text">
+              Manage grading versions, marks, and reports.
+            </p>
           </div>
 
           <div className="dashboard-actions">
@@ -334,7 +343,8 @@ export function TeacherDashboard() {
           </div>
           {pagination && (
             <p className="muted-text dashboard-pagination-note">
-              Showing page {pagination.page} of {pagination.pages} | total records: {pagination.total}
+              Showing page {pagination.page} of {pagination.pages} | total
+              records: {pagination.total}
             </p>
           )}
         </section>
@@ -373,7 +383,10 @@ export function TeacherDashboard() {
                 min="0"
                 value={versionForm.exam_weight}
                 onChange={(event) =>
-                  setVersionForm((prev) => ({ ...prev, exam_weight: event.target.value }))
+                  setVersionForm((prev) => ({
+                    ...prev,
+                    exam_weight: event.target.value,
+                  }))
                 }
                 required
               />
@@ -394,7 +407,11 @@ export function TeacherDashboard() {
                 required
               />
 
-              <button className="btn-primary" type="submit" disabled={creatingVersion}>
+              <button
+                className="btn-primary"
+                type="submit"
+                disabled={creatingVersion}
+              >
                 {creatingVersion ? "Creating..." : "Create Version"}
               </button>
             </form>
@@ -409,7 +426,10 @@ export function TeacherDashboard() {
                 type="text"
                 value={marksForm.student_id}
                 onChange={(event) =>
-                  setMarksForm((prev) => ({ ...prev, student_id: event.target.value }))
+                  setMarksForm((prev) => ({
+                    ...prev,
+                    student_id: event.target.value,
+                  }))
                 }
                 required
               />
@@ -420,7 +440,10 @@ export function TeacherDashboard() {
                 type="text"
                 value={marksForm.subject_id}
                 onChange={(event) =>
-                  setMarksForm((prev) => ({ ...prev, subject_id: event.target.value }))
+                  setMarksForm((prev) => ({
+                    ...prev,
+                    subject_id: event.target.value,
+                  }))
                 }
                 required
               />
@@ -434,7 +457,10 @@ export function TeacherDashboard() {
                 step="0.01"
                 value={marksForm.exam_marks}
                 onChange={(event) =>
-                  setMarksForm((prev) => ({ ...prev, exam_marks: event.target.value }))
+                  setMarksForm((prev) => ({
+                    ...prev,
+                    exam_marks: event.target.value,
+                  }))
                 }
                 required
               />
@@ -456,11 +482,60 @@ export function TeacherDashboard() {
                 required
               />
 
-              <button className="btn-primary" type="submit" disabled={creatingMarks}>
+              <button
+                className="btn-primary"
+                type="submit"
+                disabled={creatingMarks}
+              >
                 {creatingMarks ? "Saving..." : "Add Marks"}
               </button>
             </form>
           </article>
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Registered Students</h2>
+          {students.length === 0 ? (
+            <p className="muted-text">No registered students found.</p>
+          ) : (
+            <>
+              <div className="table-wrap">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Student ID</th>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Registered At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr key={student.unique_id}>
+                        <td>{student.unique_id}</td>
+                        <td>{student.username}</td>
+                        <td>{student.email}</td>
+                        <td>{student.role}</td>
+                        <td>
+                          {student.created_at
+                            ? new Date(student.created_at).toLocaleString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {studentsPagination && (
+                <p className="muted-text dashboard-pagination-note">
+                  Showing page {studentsPagination.page} of{" "}
+                  {studentsPagination.pages} | total registered students:{" "}
+                  {studentsPagination.total}
+                </p>
+              )}
+            </>
+          )}
         </section>
 
         <section className="dashboard-section">
@@ -497,7 +572,10 @@ export function TeacherDashboard() {
 
         <section className="dashboard-section">
           <h2>Student Report Lookup</h2>
-          <form className="auth-form teacher-inline-form" onSubmit={handleFetchStudentReport}>
+          <form
+            className="auth-form teacher-inline-form"
+            onSubmit={handleFetchStudentReport}
+          >
             <label htmlFor="teacher-student-report-id">Student ID</label>
             <input
               id="teacher-student-report-id"

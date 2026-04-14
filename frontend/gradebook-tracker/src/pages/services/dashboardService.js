@@ -46,3 +46,16 @@ export function createMarks({ token, payload }) {
     body: JSON.stringify(payload),
   });
 }
+
+// Teachers/admin can fetch registered students from users table where role=student.
+export function getRegisteredStudents({ token, page = 1, perPage = 50 }) {
+  const query = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+
+  return apiRequest(`/api/students/registered?${query.toString()}`, {
+    method: "GET",
+    authToken: token,
+  });
+}
