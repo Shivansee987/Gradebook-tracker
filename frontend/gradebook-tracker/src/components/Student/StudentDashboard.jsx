@@ -69,11 +69,11 @@ export function StudentDashboard() {
         // and subject catalog in parallel, then enriching rows with readable names.
         const [versionData, reportData, subjectsData, profileData] =
           await Promise.all([
-          getActiveGradingVersion({ token }),
-          getCurrentStudentReport({ token }),
-          getSubjects({ token, page: 1, perPage: 300 }),
-          getCurrentStudentProfile({ token }),
-        ]);
+            getActiveGradingVersion({ token }),
+            getCurrentStudentReport({ token }),
+            getSubjects({ token, page: 1, perPage: 300 }),
+            getCurrentStudentProfile({ token }),
+          ]);
 
         const subjects = subjectsData.items || [];
         const nextSubjectsMap = subjects.reduce((acc, subject) => {

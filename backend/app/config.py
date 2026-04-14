@@ -19,7 +19,11 @@ class Config:
 
     # Database configuration
     # Flask-SQLAlchemy requires SQLALCHEMY_DATABASE_URI exactly.
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or 'sqlite:///app.db' # Database URL (Neon/Postgres) with local fallback
+    # Render may expose postgres URLs; SQLAlchemy expects postgresql scheme.
+    _database_url = os.getenv('DATABASE_URL', '')
+    if _database_url.startswith('postgres://'):
+        _database_url = _database_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = _database_url or 'sqlite:///app.db' # Database URL (Neon/Postgres) with local fallback
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False # Disable SQLAlchemy event system to save resources
     SQLALCHEMY_ENGINE_OPTIONS = {
