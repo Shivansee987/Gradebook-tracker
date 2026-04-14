@@ -28,3 +28,21 @@ export function getAllMarksReport({ token, page = 1, perPage = 100 }) {
     authToken: token,
   });
 }
+
+// Teachers/admin can activate a new grading version.
+export function createGradingVersion({ token, payload }) {
+  return apiRequest("/api/version", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+// Teachers/admin can add marks for a student and subject.
+export function createMarks({ token, payload }) {
+  return apiRequest("/api/add-marks", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}

@@ -50,7 +50,7 @@ export function DashboardPage() {
   const [teacherRows, setTeacherRows] = useState([]);
   const [teacherPagination, setTeacherPagination] = useState(null);
 
-  const isElevatedRole = user?.role === "admin" || user?.role === "teacher";
+  const isElevatedRole = user?.role === "admin";
 
   const primaryRows = useMemo(
     () => (isElevatedRole ? teacherRows : studentRows),

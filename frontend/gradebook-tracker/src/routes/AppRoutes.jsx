@@ -3,22 +3,35 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { SignupPage } from "../features/auth/pages/SignupPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { TeacherDashboardPage } from "../pages/TeacherDashboardPage";
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+function getDefaultDashboardPath(user) {
+  if (user?.role === "teacher") {
+    return "/teacher/dashboard";
+  }
+
+  return "/dashboard";
+}
+
+function ProtectedRoute({ children, allowedRoles }) {
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (Array.isArray(allowedRoles) && !allowedRoles.includes(user?.role)) {
+    return <Navigate to={getDefaultDashboardPath(user)} replace />;
   }
 
   return children;
 }
 
 function PublicOnlyRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getDefaultDashboardPath(user)} replace />;
   }
 
   return children;
@@ -46,8 +59,16 @@ export function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["admin", "student"]}>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TeacherDashboardPage />
           </ProtectedRoute>
         }
       />

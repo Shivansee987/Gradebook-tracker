@@ -16,13 +16,18 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      await login(values);
+      const result = await login(values);
       pushToast({
         type: "success",
         title: "Welcome back",
         message: "Login successful.",
       });
-      navigate("/dashboard");
+
+      if (result?.user?.role === "teacher") {
+        navigate("/teacher/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.message);
       pushToast({
