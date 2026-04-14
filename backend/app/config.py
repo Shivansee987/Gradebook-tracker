@@ -34,3 +34,8 @@ class Config:
     JSON_SORT_KEYS = False
     PROPAGATE_EXCEPTIONS = False
     DEBUG = os.getenv('FLASK_DEBUG', '0') == '1'
+    CORS_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv('CORS_ORIGINS', '*').split(',')
+        if origin.strip()
+    ]
