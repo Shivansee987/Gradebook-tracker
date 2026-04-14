@@ -3,11 +3,16 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { SignupPage } from "../features/auth/pages/SignupPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { StudentDashboardPage } from "../pages/StudentDashboardPage";
 import { TeacherDashboardPage } from "../pages/TeacherDashboardPage";
 
 function getDefaultDashboardPath(user) {
   if (user?.role === "teacher") {
     return "/teacher/dashboard";
+  }
+
+  if (user?.role === "student") {
+    return "/students/dashboard";
   }
 
   return "/dashboard";
@@ -59,8 +64,16 @@ export function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={["admin", "student"]}>
+          <ProtectedRoute allowedRoles={["admin"]}>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/students/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentDashboardPage />
           </ProtectedRoute>
         }
       />
